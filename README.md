@@ -4,11 +4,7 @@ This binding provides a very basic persistence service for emoncms (http://emonc
 
 ## Installation
 
-Drop the .jar file from the plugins/ folder in your openHAB `addons` directory.
-
-## Installation
-
-For installation of this persistence package please follow the same steps as if you would [install a binding](Bindings).
+Compile with Maven then drop the .jar file  folder in your openHAB `addons` directory.
 
 Additionally, place a persistence file called emoncms.persist in the `${openhab.home}/configuration/persistence` folder.
 
@@ -17,19 +13,23 @@ Additionally, place a persistence file called emoncms.persist in the `${openhab.
 This persistence service can be configured in `openhab.cfg`.
 The configuration should look like this : 
 
-######################## Emoncms Persistence Service ##############################
-#
-# the url of the emoncms server (optional, default is http://emoncms.org/)
-emoncms:url=
+>######################## Emoncms Persistence Service ##############################
+>\#
+>\# the url of the emoncms server (optional, default is http://emoncms.org/)
 
-# the emoncms API-Key for authentication (mandatory, generated on the emoncms server or website : http://emoncms.org/input/api)
-emoncms:apikey=
+> emoncms:url=
 
-# the node number (optional, default is 0)
-emoncms:node=
+>\# the emoncms API-Key for authentication (mandatory, generated on the emoncms server or website)
 
-# if the value should be rounded (optional, default is false)
-emoncms:round=
+> emoncms:apikey=
+
+>\# the node number (optional, default is 0)
+
+> emoncms:node=
+
+>\# if the value should be rounded (optional, default is false)
+
+> emoncms:round=
 
 
 All item and event related configuration is done in the emoncms.persist file. Aliases do not have any special meaning for the emoncms persistence service.
