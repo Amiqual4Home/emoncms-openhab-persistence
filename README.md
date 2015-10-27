@@ -6,10 +6,6 @@ This binding provides a very basic persistence service for emoncms (http://emonc
 
 Compile with Maven then drop the .jar file  folder in your openHAB `addons` directory.
 
-## Installation
-
-For installation of this persistence package please follow the same steps as if you would [install a binding](Bindings).
-
 Additionally, place a persistence file called emoncms.persist in the `${openhab.home}/configuration/persistence` folder.
 
 ## Configuration
