@@ -10,12 +10,12 @@
  */
 package org.openhab.persistence.emoncms.internal;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.HashMap;
 
 import org.openhab.core.items.Item;
+import org.openhab.core.library.types.DecimalType;
 import org.openhab.core.persistence.PersistenceService;
+import org.openhab.core.types.UnDefType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,10 +26,10 @@ import org.slf4j.LoggerFactory;
  */
 public class EmoncmsLogger {
 
-	private String apiKey;
-	private String econcmsUrl;
-	private int node;
-	private boolean round;
+	protected static String apiKey;
+	protected static String econcmsUrl;
+	protected static int node;
+	protected static boolean round;
 	public static String FUNCTION_POST = "input/post.json?";
 	public static String NODE = "node=";
 	public static String JSON = "json=";
@@ -41,67 +41,50 @@ public class EmoncmsLogger {
 
 	public EmoncmsLogger(String econcmsUrl, String apiKey, int node,
 			boolean round) {
-		this.apiKey = apiKey;
-		this.econcmsUrl = econcmsUrl;
-		this.node = node;
-		this.round = round;
+		EmoncmsLogger.apiKey = apiKey;
+		EmoncmsLogger.econcmsUrl = econcmsUrl;
+		EmoncmsLogger.node = node;
+		EmoncmsLogger.round = round;
 	}
 
-	public boolean logEvent(Item item) {
+	public void logEvent(Item item) {
 
-		if (!item.getState().toString().equals(UNINITIALIZED)) {
-			HashMap<String, String> datas = new HashMap<String, String>();
+		if (!(item.getState() instanceof UnDefType)) {
+			HashMap<String, DecimalType> datas = new HashMap<String, DecimalType>();
 
-			String value = item.getState().toString();
+			datas.put(item.getName(),  (DecimalType) item.getStateAs(DecimalType.class));
 
-			try {
-				if (round) {
-					value = "" + Math.round(Double.parseDouble(value));
-				}
-			} catch (Exception e1) {
-				logger.error("error trying to round "
-						+ item.getState().toString() + "  : "
-						+ e1.getLocalizedMessage());
-			}
+				postDatas(datas);
 
-			datas.put(item.getName(), value);
-
-			try {
-				this.postDatas(datas);
-			} catch (IOException e) {
-				logger.debug("emoncms error : " + e);
-				return false;
-			}
-
-			return true;
 		} else {
 			logger.debug("emoncms logger : object " + item.getName()
 					+ " Uninitialized");
-			return false;
 		}
 	}
 
-	public void postDatas(HashMap<String, String> datas) throws IOException {
-		StringBuilder urlString = new StringBuilder(this.econcmsUrl);
-		urlString.append(FUNCTION_POST);
-		urlString.append(NODE + this.node);
-		urlString.append("&" + API + this.apiKey);
-		urlString.append("&" + JSON + "{");
+	protected static void postDatas(HashMap<String, DecimalType> datas) {
+		final EmoncmsRequestBuilder requestBuilder = new EmoncmsRequestBuilder(econcmsUrl, apiKey, node);
+		
+		synchronized (requestBuilder) {
+			
+		try {
+			if (!datas.isEmpty() && datas!= null){
+			logger.debug("trying to post " + datas.size() + " items");
+			
 
-		if (datas != null) {
-			for (String key : datas.keySet()) {
-
-				urlString.append(key + ":" + datas.get(key));
-				urlString.append(",");
-			}
+				for (String key : datas.keySet()) {
+					try {
+						DecimalType state = datas.get(key);
+						requestBuilder.appendData(key , "" + ( round ? state.intValue() : state.floatValue()));
+					} catch (Exception e) {
+						logger.error("Error handling item " + key + " with value " + datas.get(key).toString()+ " : " + e);
+					}
+				}
+						requestBuilder.finalizeRequest();
+					}
+		} catch (Exception e) {
+			logger.error("Error posting " + datas.size() + " datas to emoncms : " + e);
 		}
-		urlString.replace(urlString.lastIndexOf(","),
-				urlString.lastIndexOf(",") + 1, "");
-		urlString.append("}");
-
-		URL url = new URL(urlString.toString());
-		logger.debug("Posting " + url.toExternalForm());
-		logger.debug("retour : " + url.getContent());
 	}
-
+	}
 }

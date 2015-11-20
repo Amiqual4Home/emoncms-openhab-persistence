@@ -33,14 +33,17 @@ public class EmoncmsService implements PersistenceService, ManagedService {
 	private String apiKey;
 	private String url;
 	private int node;
-	private EmoncmsLogger emoncmsLogger;
+	private EmoncmsLogger emoncmsLogger = null;
 	private boolean round;
+	private int sendInterval;
 
 	private final static String DEFAULT_EVENT_URL = "http://emoncms.org/";
 
 	private final static int DEFAULT_NODE = 0;
 
 	private final static boolean DEFAULT_ROUND = false;
+	
+	private final static int DEFAULT_SEND_INTERVAL = 0;
 
 	private boolean initialized = false;
 
@@ -51,24 +54,27 @@ public class EmoncmsService implements PersistenceService, ManagedService {
 		return "emoncms";
 	}
 
-	/**
-	 * @{inheritDoc
-	 */
-	public void store(Item item, String alias) {
-		if (!initialized) {
-			logger.debug("emoncms persistence logger not initialized");
-		} else {
-			logger.debug("logged item " + item.getName() + " = "
-					+ this.emoncmsLogger.logEvent(item));
-		}
-
+	public void deactivate() {
+		this.emoncmsLogger = null;
 	}
 
 	/**
 	 * @{inheritDoc
 	 */
+	public void store(Item item, String alias) {
+		store(item);
+	}
+	
+
+	/**
+	 * @{inheritDoc
+	 */
 	public void store(Item item) {
-		store(item, item.getName());
+		if (initialized) {
+			this.emoncmsLogger.logEvent(item);
+		} else {
+			logger.error("emoncms persistence logger not initialized");
+		}
 	}
 
 	/**
@@ -76,41 +82,56 @@ public class EmoncmsService implements PersistenceService, ManagedService {
 	 */
 	@SuppressWarnings("rawtypes")
 	public void updated(Dictionary config) throws ConfigurationException {
+		
+		this.initialized = false;
 
+		this.emoncmsLogger = null;
+		
 		logger.debug("Parsing new configuration for emoncms persistence service");
 
 		if (config != null) {
 
-			url = (String) config.get("url");
+			this.url = (String) config.get("url");
 			if (StringUtils.isBlank(url)) {
-				url = DEFAULT_EVENT_URL;
+				this.url = DEFAULT_EVENT_URL;
 			}
 
 			try {
-				node = Integer.parseInt((String) config.get("node"));
+				this.node = Integer.parseInt((String) config.get("node"));
 			} catch (Exception e) {
-				logger.error("emoncms using default node : " + DEFAULT_NODE
+				logger.info("emoncms using default node : " + DEFAULT_NODE
 						+ " error : " + e.getLocalizedMessage());
-				node = DEFAULT_NODE;
+				this.node = DEFAULT_NODE;
+			}
+			
+			try {
+				this.sendInterval = Integer.parseInt((String) config.get("sendinterval"));
+			} catch (Exception e) {
+				logger.info("emoncms using default sendinterval : " + DEFAULT_SEND_INTERVAL
+						+ " error : " + e.getLocalizedMessage());
+				this.sendInterval = DEFAULT_SEND_INTERVAL;
 			}
 
 			try {
-				round = (boolean) Boolean.parseBoolean((String) config
+				this.round = (boolean) Boolean.parseBoolean((String) config
 						.get("round"));
 			} catch (Exception e) {
-				logger.error("emoncms using default round : " + DEFAULT_ROUND
+				logger.info("emoncms using default round : " + DEFAULT_ROUND
 						+ " error : " + e.getLocalizedMessage());
-				round = DEFAULT_ROUND;
+				this.round = DEFAULT_ROUND;
 			}
 
-			apiKey = (String) config.get("apikey");
+			this.apiKey = (String) config.get("apikey");
 			if (StringUtils.isBlank(apiKey)) {
 				throw new ConfigurationException("emoncms:apikey",
 						"The emoncms API-Key is missing - please configure it in openhab.cfg");
 			}
+			
+			this.initialized = true;
 
-			this.emoncmsLogger = new EmoncmsLogger(url, apiKey, node, round);
-			initialized = true;
+			this.emoncmsLogger = (this.sendInterval == 0 ? new EmoncmsLogger(url, apiKey, node, round) : new DelayedEmoncmsLogger(url, apiKey, node, round, sendInterval));
+		
+			
 		}
 	}
 
