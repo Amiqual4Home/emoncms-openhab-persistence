@@ -1,6 +1,15 @@
 # emoncms Persistence service for openHAB
 
-This binding provides a very basic persistence service for emoncms (http://emoncms.org/)
+Update 23/11/15 : you can now set the configuration line "sendinterval" (see below)
+The send interval is the time the binding will wait, when receiving a data to store, before sending the request to the server.
+Each new store request during this interval will be added to make only one request to the server and reduce greatly the number of request and the time.
+This is very useful when persisting big group (tested with 1300+ items) with time based persistence strategies (everyMinute, everyHour...).
+If set to 0, each store request will result in an instant request to the server (better for event based persistence strategies) 
+
+
+This binding provides a persistence service for emoncms (http://emoncms.org/).
+You can use it with the official server or your own.
+
 
 ## Installation
 
@@ -31,6 +40,11 @@ The configuration should look like this :
 
 > emoncms:round=
 
+>\# the interval is ms between sends in order to store multiple object within one request
+>\# default is 0, in this case each store request results in a request to the server
+
+> emoncms:sendinterval=
+
 
 All item and event related configuration is done in the emoncms.persist file. Aliases do not have any special meaning for the emoncms persistence service.
 
@@ -38,5 +52,5 @@ All item and event related configuration is done in the emoncms.persist file. Al
 
 ## Development
 
-This is a very simple dev, for a very basic use. It only posts datas as inputs on the server.
+This is a simple dev, for a basic use. It only posts datas as inputs on the server.
 Feeds and logs need to be created elsewhere.

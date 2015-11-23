@@ -59,7 +59,7 @@ public final class DelayedEmoncmsLogger extends EmoncmsLogger{
 	
 	public void logEvent(Item item) {
 		
-		synchronized (this) {			
+		synchronized (datas) {			
 
 		try {
 			if (!(item.getState() instanceof UnDefType)) {

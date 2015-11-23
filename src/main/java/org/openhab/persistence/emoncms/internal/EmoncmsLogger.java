@@ -35,6 +35,7 @@ public class EmoncmsLogger {
 	public static String JSON = "json=";
 	public static final String API = "apikey=";
 	public static final String UNINITIALIZED = "Uninitialized";
+	public static EmoncmsRequestBuilder requestBuilder;
 
 	private static final Logger logger = LoggerFactory
 			.getLogger(EmoncmsLogger.class);
@@ -45,6 +46,7 @@ public class EmoncmsLogger {
 		EmoncmsLogger.econcmsUrl = econcmsUrl;
 		EmoncmsLogger.node = node;
 		EmoncmsLogger.round = round;
+		EmoncmsLogger.requestBuilder = new EmoncmsRequestBuilder(econcmsUrl, apiKey, node);
 	}
 
 	public void logEvent(Item item) {
@@ -63,7 +65,7 @@ public class EmoncmsLogger {
 	}
 
 	protected static void postDatas(HashMap<String, DecimalType> datas) {
-		final EmoncmsRequestBuilder requestBuilder = new EmoncmsRequestBuilder(econcmsUrl, apiKey, node);
+		
 		
 		synchronized (requestBuilder) {
 			
